@@ -1,0 +1,165 @@
+/* Submind Web Interface - Custom Styles */
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for chat container */
+#chatContainer::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chatContainer::-webkit-scrollbar-track {
+    background: #2f3136;
+}
+
+#chatContainer::-webkit-scrollbar-thumb {
+    background: #202225;
+    border-radius: 4px;
+}
+
+#chatContainer::-webkit-scrollbar-thumb:hover {
+    background: #40444b;
+}
+
+/* Message fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Thinking dots animation */
+@keyframes thinkingDots {
+    0%, 20% {
+        content: 'thinking';
+    }
+    40% {
+        content: 'thinking.';
+    }
+    60% {
+        content: 'thinking..';
+    }
+    80%, 100% {
+        content: 'thinking...';
+    }
+}
+
+.thinking-dots::after {
+    content: '';
+    animation: thinkingDots 1.5s infinite;
+}
+
+/* Submind color dots */
+.submind-blue {
+    background-color: #3b82f6;
+}
+
+.submind-cyan {
+    background-color: #06b6d4;
+}
+
+.submind-green {
+    background-color: #10b981;
+}
+
+.submind-magenta,
+.submind-purple {
+    background-color: #a855f7;
+}
+
+.submind-red {
+    background-color: #ef4444;
+}
+
+.submind-yellow {
+    background-color: #eab308;
+}
+
+.submind-white {
+    background-color: #9ca3af;
+}
+
+/* Message content styling */
+.message-content {
+    line-height: 1.6;
+}
+
+.message-content a {
+    color: #3b82f6;
+    text-decoration: underline;
+}
+
+.message-content a:hover {
+    color: #60a5fa;
+}
+
+/* Input focus ring */
+input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Button hover effects */
+button {
+    transition: all 0.2s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Pulse animation for status */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #chatContainer {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .message-content {
+        font-size: 0.95rem;
+    }
+}
+
+/* Custom Discord-like styling */
+body {
+    font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Make avatars slightly glow */
+.w-10.h-10.rounded-full {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover effect on messages */
+#chatContainer > div:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+    padding-left: 0.5rem;
+    margin-left: -0.5rem;
+    transition: all 0.15s ease;
+}

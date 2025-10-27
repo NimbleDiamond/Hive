@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Submind Discussion System</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script>
+        // Tailwind config for custom colors
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'discord-dark': '#36393f',
+                        'discord-darker': '#2f3136',
+                        'discord-darkest': '#202225',
+                        'discord-input': '#40444b',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-discord-darkest text-gray-100 h-screen overflow-hidden">
+    <div class="flex flex-col h-screen">
+        <!-- Header -->
+        <div class="bg-discord-darker border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold">🧠 Submind Discussion</h1>
+                <p class="text-sm text-gray-400">Five AI perspectives collaborating</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="exportBtn" class="hidden px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition">
+                    📥 Export
+                </button>
+                <button id="newChatBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">
+                    ➕ New Chat
+                </button>
+            </div>
+        </div>
+
+        <!-- Submind Info Bar -->
+        <div class="bg-discord-dark px-6 py-3 border-b border-gray-800">
+            <div class="flex flex-wrap gap-3">
+                {% for submind in subminds %}
+                <div class="flex items-center gap-2 px-3 py-1 bg-discord-darker rounded-full">
+                    <div class="w-2 h-2 rounded-full submind-{{ submind.color }}"></div>
+                    <span class="text-sm font-medium">{{ submind.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="chatContainer" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            <!-- Welcome Message -->
+            <div class="flex items-start gap-3 opacity-60">
+                <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-xl">
+                    🤖
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-semibold">System</span>
+                        <span class="text-xs text-gray-500">Just now</span>
+                    </div>
+                    <div class="mt-1 text-gray-300">
+                        Welcome to Submind! Ask a question and watch five specialized AI perspectives discuss it.
+                        <br><br>
+                        <strong>The Five Minds:</strong><br>
+                        • <span class="text-blue-400">Doctrinal</span> - Traditional wisdom and proven methods<br>
+                        • <span class="text-cyan-400">Analytical</span> - Data-driven and empirical analysis<br>
+                        • <span class="text-green-400">Strategic</span> - Practical implementation<br>
+                        • <span class="text-purple-400">Creative</span> - Innovative thinking<br>
+                        • <span class="text-red-400">Skeptic</span> - Critical analysis
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="bg-discord-dark border-t border-gray-800 px-6 py-4">
+            <form id="chatForm" class="flex gap-3">
+                <input
+                    type="text"
+                    id="promptInput"
+                    placeholder="Ask a question or share an idea..."
+                    class="flex-1 bg-discord-input text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autocomplete="off"
+                    required
+                />
+                <button
+                    type="button"
+                    id="stopBtn"
+                    class="hidden px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition"
+                >
+                    ⏹ Stop
+                </button>
+                <button
+                    type="submit"
+                    id="sendBtn"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Send
+                </button>
+            </form>
+            <div id="statusBar" class="mt-2 text-sm text-gray-500 hidden">
+                <span id="statusText"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

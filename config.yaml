@@ -1,0 +1,99 @@
+# Submind System Configuration
+# Visit https://openrouter.ai/models to browse available models
+# Free models often include: google/gemini-flash-1.5, meta-llama/llama-3.2-3b-instruct:free, etc.
+
+# Global Settings
+conversation:
+  max_rounds: 4                    # Maximum number of discussion rounds (increased for more interaction)
+  detect_consensus: true           # Enable smart termination detection
+  consensus_threshold: 0.7         # Similarity threshold for detecting repetition
+  minimum_responses_per_submind: 1 # Each submind must respond at least this many times
+  delay_between_subminds: 1.5      # Seconds to wait between each submind (simulate reading time)
+  enable_export: true              # Auto-export conversations after completion
+
+# Default Model (used if submind-specific model not set)
+# You can easily change this to any OpenRouter model
+default_model: "meta-llama/llama-3.2-3b-instruct:free"
+
+# Submind Configurations
+# NEW: Fallback Models - Each submind can have multiple models for rate limit resilience!
+# Use 'models' (list) for fallback support, or 'model' (string) for single model
+# Set to null to use default_model
+#
+# Example with fallbacks:
+#   models: ["meta-llama/llama-3.2-3b-instruct:free", "google/gemini-flash-1.5"]
+#   If first model hits rate limit, automatically tries the second
+#
+# Benefits: Different models = more diverse perspectives + better reliability!
+
+subminds:
+  - name: "Doctrinal"
+    role: "traditional"
+    models:  # NEW: List of models with fallbacks
+      - "meta-llama/llama-3.2-3b-instruct:free"
+      - "google/gemini-flash-1.5"
+      - "mistralai/mistral-7b-instruct:free"
+    temperature: 0.7
+    max_tokens: 500
+    color: "blue"
+
+  - name: "Analytical"
+    role: "analytical"
+    models:
+      - "meta-llama/llama-3.2-3b-instruct:free"
+      - "google/gemini-flash-1.5"
+      - "mistralai/mistral-7b-instruct:free"
+    temperature: 0.5  # Lower temp for more focused analysis
+    max_tokens: 500
+    color: "cyan"
+
+  - name: "Strategic"
+    role: "strategic"
+    models:
+      - "meta-llama/llama-3.2-3b-instruct:free"
+      - "google/gemma-3-12b-it:free"
+      - "google/gemini-flash-1.5"
+    temperature: 0.6
+    max_tokens: 500
+    color: "green"
+
+  - name: "Creative"
+    role: "creative"
+    models:
+      - "meta-llama/llama-3.2-3b-instruct:free"
+      - "mistralai/mistral-7b-instruct:free"
+      - "google/gemini-flash-1.5"
+    temperature: 0.9  # Higher temp for more creative responses
+    max_tokens: 500
+    color: "magenta"
+
+  - name: "Skeptic"
+    role: "skeptic"
+    models:
+      - "meta-llama/llama-3.2-3b-instruct:free"
+      - "mistralai/mistral-7b-instruct:free"
+      - "meta-llama/llama-3.2-3b-instruct:free"
+    temperature: 0.6
+    max_tokens: 500
+    color: "red"
+
+# NOTE: Backwards compatible - you can still use 'model: "name"' instead of 'models: ["name"]'
+
+# Export Settings
+export:
+  format: ["json", "markdown"]  # Export formats to generate
+  directory: "exports"
+  include_metadata: true
+  include_timestamps: true
+
+# Popular Free Models (uncomment to use):
+# - "google/gemini-flash-1.5"
+# - "meta-llama/llama-3.2-3b-instruct:free"
+# - "nousresearch/hermes-3-llama-3.1-405b:free"
+# - "mistralai/mistral-7b-instruct:free"
+
+# Popular Paid Models (examples):
+# - "openai/gpt-4-turbo"
+# - "openai/gpt-3.5-turbo"
+# - "anthropic/claude-3.5-sonnet"
+# - "google/gemini-pro-1.5"

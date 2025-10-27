@@ -1,0 +1,17 @@
+# API and HTTP
+openai>=1.0.0
+requests>=2.31.0
+
+# Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# CLI Interface
+rich>=13.7.0
+
+# Web Interface
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Utilities
+python-dateutil>=2.8.2
