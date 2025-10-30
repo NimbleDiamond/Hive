@@ -1,6 +1,6 @@
 """
-OpenRouter API client for submind system.
-Uses OpenAI-compatible interface for OpenRouter.
+LM Studio API client for submind system.
+Uses OpenAI-compatible interface for LM Studio local server.
 """
 
 import os
@@ -13,36 +13,28 @@ class RateLimitError(Exception):
     pass
 
 
-class OpenRouterClient:
-    """Client for interacting with OpenRouter API."""
+class LMStudioClient:
+    """Client for interacting with LM Studio local API server."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, base_url: Optional[str] = None):
         """
-        Initialize OpenRouter client.
+        Initialize LM Studio client.
 
         Args:
-            api_key: OpenRouter API key. If None, reads from OPENROUTER_API_KEY env var.
+            base_url: LM Studio server URL. If None, reads from LMSTUDIO_BASE_URL env var.
+                     Defaults to http://192.168.4.30:1234/v1
 
-        Raises:
-            ValueError: If no API key is provided or found in environment
+        Note:
+            LM Studio doesn't require API authentication for local usage.
         """
-        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        self.base_url = base_url or os.getenv("LMSTUDIO_BASE_URL", "http://192.168.4.30:1234/v1")
 
-        if not self.api_key:
-            raise ValueError(
-                "OpenRouter API key not found. "
-                "Set OPENROUTER_API_KEY environment variable or pass api_key parameter."
-            )
-
-        # Initialize OpenAI client with OpenRouter base URL
+        # Initialize OpenAI client with LM Studio base URL
+        # LM Studio doesn't require an API key for local usage
         self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=self.api_key,
+            base_url=self.base_url,
+            api_key="lm-studio",  # Dummy key required by OpenAI client but not validated by LM Studio
         )
-
-        # Optional: Set app identification
-        self.app_name = os.getenv("OPENROUTER_APP_NAME", "Submind")
-        self.app_url = os.getenv("OPENROUTER_APP_URL", "")
 
     def generate_response(
         self,
@@ -55,7 +47,7 @@ class OpenRouterClient:
         Generate a response from the specified model.
 
         Args:
-            model: The model identifier (e.g., "openai/gpt-3.5-turbo")
+            model: The model identifier (e.g., "mistralai/mistral-7b-instruct-v0.3")
             messages: List of message dicts with 'role' and 'content'
             temperature: Sampling temperature (0.0 to 2.0)
             max_tokens: Maximum tokens to generate
@@ -67,20 +59,12 @@ class OpenRouterClient:
             Exception: If API call fails
         """
         try:
-            # Build extra headers
-            extra_headers = {}
-            if self.app_name:
-                extra_headers["X-Title"] = self.app_name
-            if self.app_url:
-                extra_headers["HTTP-Referer"] = self.app_url
-
-            # Make API call
+            # Make API call to LM Studio
             response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                extra_headers=extra_headers if extra_headers else None,
             )
 
             # Extract response text
@@ -107,7 +91,7 @@ class OpenRouterClient:
             return content
 
         except Exception as e:
-            # Check if this is a rate limit error
+            # Check if this is a rate limit error (less common with local LM Studio)
             error_msg = str(e).lower()
             if any(indicator in error_msg for indicator in [
                 'rate limit', 'rate_limit', 'ratelimit',
@@ -116,28 +100,23 @@ class OpenRouterClient:
                 raise RateLimitError(f"Rate limit exceeded for model {model}: {str(e)}") from e
 
             # Not a rate limit error, raise generic exception
-            raise Exception(f"OpenRouter API error: {str(e)}") from e
+            raise Exception(f"LM Studio API error: {str(e)}") from e
 
     def list_models(self) -> List[str]:
         """
-        List available models (placeholder - OpenRouter doesn't have a direct API for this).
+        List available models from LM Studio.
 
         Returns:
-            List of common model identifiers
+            List of model identifiers available on the LM Studio server
         """
-        # Common free and paid models on OpenRouter
-        return [
-            # Free models
-            "meta-llama/llama-3.2-3b-instruct:free",
-            "google/gemini-flash-1.5",
-            "nousresearch/hermes-3-llama-3.1-405b:free",
-            "mistralai/mistral-7b-instruct:free",
-            # Paid models
-            "openai/gpt-4-turbo",
-            "openai/gpt-3.5-turbo",
-            "anthropic/claude-3.5-sonnet",
-            "google/gemini-pro-1.5",
-        ]
+        try:
+            # LM Studio supports the /v1/models endpoint
+            models = self.client.models.list()
+            return [model.id for model in models.data]
+        except Exception as e:
+            # Fallback to known model if API call fails
+            print(f"Could not fetch models from LM Studio: {e}")
+            return ["mistralai/mistral-7b-instruct-v0.3"]
 
     def validate_connection(self) -> bool:
         """
@@ -147,13 +126,10 @@ class OpenRouterClient:
             True if connection successful, False otherwise
         """
         try:
-            # Make a minimal test call
-            response = self.client.chat.completions.create(
-                model="meta-llama/llama-3.2-3b-instruct:free",
-                messages=[{"role": "user", "content": "test"}],
-                max_tokens=1,
-            )
-            return True
+            # Try to get the list of available models as a lightweight test
+            models = self.client.models.list()
+            return len(models.data) > 0
         except Exception as e:
             print(f"Connection test failed: {e}")
+            print(f"Make sure LM Studio is running at {self.base_url}")
             return False

@@ -11,7 +11,7 @@ from flask import Flask, render_template, request, Response, stream_with_context
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-from src import OpenRouterClient, Submind, TerminationDetector, ConversationExporter
+from src import LMStudioClient, Submind, TerminationDetector, ConversationExporter
 from src.conversation_stream import StreamingConversation
 
 
@@ -41,10 +41,10 @@ def initialize_system():
     global api_client, subminds, exporter
 
     # Initialize API client
-    api_client = OpenRouterClient()
+    api_client = LMStudioClient()
 
     # Initialize subminds
-    default_model = config.get("default_model", "meta-llama/llama-3.2-3b-instruct:free")
+    default_model = config.get("default_model", "mistralai/mistral-7b-instruct-v0.3")
 
     for submind_config in config.get("subminds", []):
         name = submind_config["name"]
@@ -104,6 +104,8 @@ def chat():
     Receives user prompt and streams submind responses in real-time.
     """
     user_prompt = request.json.get("prompt", "")
+    enabled_subminds = request.json.get("enabled_subminds", None)
+    auto_terminate = request.json.get("auto_terminate", True)
 
     if not user_prompt:
         return {"error": "No prompt provided"}, 400
@@ -112,23 +114,41 @@ def chat():
     if user_prompt.strip().lower() == "stop":
         return {"message": "Discussion stopped"}, 200
 
+    # Filter subminds if enabled_subminds is provided
+    active_subminds = subminds
+    if enabled_subminds is not None:
+        # Validate: minimum 2 subminds
+        if len(enabled_subminds) < 2:
+            return {"error": "Minimum 2 subminds required"}, 400
+
+        # Filter to only enabled subminds
+        active_subminds = [s for s in subminds if s.name in enabled_subminds]
+
+        # Validate: all provided names are valid
+        if len(active_subminds) != len(enabled_subminds):
+            return {"error": "Invalid submind names provided"}, 400
+
     def generate():
         """Generator function for SSE."""
         # Reset subminds for new conversation
-        for submind in subminds:
+        for submind in active_subminds:
             submind.reset()
 
         # Create conversation manager
         conv_config = config.get("conversation", {})
+
+        # Use auto_terminate to override detect_consensus setting
+        detect_consensus = conv_config.get("detect_consensus", True) if auto_terminate else False
+
         termination_detector = TerminationDetector(
             max_rounds=conv_config.get("max_rounds", 3),
-            detect_consensus=conv_config.get("detect_consensus", True),
+            detect_consensus=detect_consensus,
             consensus_threshold=conv_config.get("consensus_threshold", 0.7),
             minimum_responses_per_submind=conv_config.get("minimum_responses_per_submind", 1),
         )
 
         streaming_conversation = StreamingConversation(
-            subminds=subminds,
+            subminds=active_subminds,
             termination_detector=termination_detector,
             delay_between_subminds=conv_config.get("delay_between_subminds", 0.0),
         )
@@ -193,6 +213,7 @@ def get_config():
             for s in subminds
         ],
         "max_rounds": config.get("conversation", {}).get("max_rounds", 3),
+        "presets": config.get("submind_presets", {}),
     }
 
 

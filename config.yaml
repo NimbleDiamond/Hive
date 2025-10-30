@@ -1,6 +1,5 @@
 # Submind System Configuration
-# Visit https://openrouter.ai/models to browse available models
-# Free models often include: google/gemini-flash-1.5, meta-llama/llama-3.2-3b-instruct:free, etc.
+# LM Studio local server - Make sure LM Studio is running at http://192.168.4.30:1234
 
 # Global Settings
 conversation:
@@ -12,72 +11,48 @@ conversation:
   enable_export: true              # Auto-export conversations after completion
 
 # Default Model (used if submind-specific model not set)
-# You can easily change this to any OpenRouter model
-default_model: "meta-llama/llama-3.2-3b-instruct:free"
+# Currently using local LM Studio model
+default_model: "mistralai/mistral-7b-instruct-v0.3"
 
 # Submind Configurations
-# NEW: Fallback Models - Each submind can have multiple models for rate limit resilience!
-# Use 'models' (list) for fallback support, or 'model' (string) for single model
-# Set to null to use default_model
-#
-# Example with fallbacks:
-#   models: ["meta-llama/llama-3.2-3b-instruct:free", "google/gemini-flash-1.5"]
-#   If first model hits rate limit, automatically tries the second
-#
-# Benefits: Different models = more diverse perspectives + better reliability!
+# All subminds use the same local LM Studio model
+# Different temperatures create varied perspectives from the same model
 
 subminds:
   - name: "Doctrinal"
     role: "traditional"
-    models:  # NEW: List of models with fallbacks
-      - "meta-llama/llama-3.2-3b-instruct:free"
-      - "google/gemini-flash-1.5"
-      - "mistralai/mistral-7b-instruct:free"
+    model: "mistralai/mistral-7b-instruct-v0.3"
     temperature: 0.7
     max_tokens: 500
     color: "blue"
 
   - name: "Analytical"
     role: "analytical"
-    models:
-      - "meta-llama/llama-3.2-3b-instruct:free"
-      - "google/gemini-flash-1.5"
-      - "mistralai/mistral-7b-instruct:free"
+    model: "mistralai/mistral-7b-instruct-v0.3"
     temperature: 0.5  # Lower temp for more focused analysis
     max_tokens: 500
     color: "cyan"
 
   - name: "Strategic"
     role: "strategic"
-    models:
-      - "meta-llama/llama-3.2-3b-instruct:free"
-      - "google/gemma-3-12b-it:free"
-      - "google/gemini-flash-1.5"
+    model: "mistralai/mistral-7b-instruct-v0.3"
     temperature: 0.6
     max_tokens: 500
     color: "green"
 
   - name: "Creative"
     role: "creative"
-    models:
-      - "meta-llama/llama-3.2-3b-instruct:free"
-      - "mistralai/mistral-7b-instruct:free"
-      - "google/gemini-flash-1.5"
+    model: "mistralai/mistral-7b-instruct-v0.3"
     temperature: 0.9  # Higher temp for more creative responses
     max_tokens: 500
     color: "magenta"
 
   - name: "Skeptic"
     role: "skeptic"
-    models:
-      - "meta-llama/llama-3.2-3b-instruct:free"
-      - "mistralai/mistral-7b-instruct:free"
-      - "meta-llama/llama-3.2-3b-instruct:free"
+    model: "mistralai/mistral-7b-instruct-v0.3"
     temperature: 0.6
     max_tokens: 500
     color: "red"
-
-# NOTE: Backwards compatible - you can still use 'model: "name"' instead of 'models: ["name"]'
 
 # Export Settings
 export:
@@ -86,14 +61,36 @@ export:
   include_metadata: true
   include_timestamps: true
 
-# Popular Free Models (uncomment to use):
-# - "google/gemini-flash-1.5"
-# - "meta-llama/llama-3.2-3b-instruct:free"
-# - "nousresearch/hermes-3-llama-3.1-405b:free"
-# - "mistralai/mistral-7b-instruct:free"
+# LM Studio Configuration Notes:
+# - Make sure LM Studio is running and has a model loaded
+# - Server should be accessible at http://192.168.4.30:1234
+# - You can change the server URL in .env using LMSTUDIO_BASE_URL
+# - Only one model at a time is supported per LM Studio instance
 
-# Popular Paid Models (examples):
-# - "openai/gpt-4-turbo"
-# - "openai/gpt-3.5-turbo"
-# - "anthropic/claude-3.5-sonnet"
-# - "google/gemini-pro-1.5"
+# Submind Presets
+# Define preset combinations for different use cases
+submind_presets:
+  all:
+    name: "All Minds"
+    description: "Full discussion with all perspectives"
+    subminds: [Doctrinal, Analytical, Strategic, Creative, Skeptic]
+
+  science:
+    name: "Science Focus"
+    description: "Analytical and empirical discussion"
+    subminds: [Analytical, Skeptic, Creative]
+
+  politics:
+    name: "Politics & Policy"
+    description: "Strategic and doctrinal analysis"
+    subminds: [Doctrinal, Strategic, Skeptic]
+
+  creative:
+    name: "Creative Brainstorm"
+    description: "Innovative thinking and analysis"
+    subminds: [Creative, Analytical, Strategic]
+
+  quick:
+    name: "Quick Chat"
+    description: "Fast discussion with 2 minds"
+    subminds: [Analytical, Strategic]

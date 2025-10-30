@@ -5,7 +5,7 @@ Individual submind class representing one persona in the discussion.
 from typing import List, Dict, Optional, Union
 from datetime import datetime
 from subminds import get_system_prompt
-from src.api_client import OpenRouterClient, RateLimitError
+from src.api_client import LMStudioClient, RateLimitError
 
 
 class Submind:
@@ -17,7 +17,7 @@ class Submind:
         self,
         name: str,
         role: str,
-        api_client: OpenRouterClient,
+        api_client: LMStudioClient,
         model: Union[str, List[str]],
         temperature: float = 0.7,
         max_tokens: int = 500,
@@ -29,7 +29,7 @@ class Submind:
         Args:
             name: Display name (e.g., "Doctrinal", "Analytical")
             role: Role identifier for system prompt (e.g., "traditional", "analytical")
-            api_client: OpenRouter API client instance
+            api_client: LM Studio API client instance
             model: Model identifier(s) to use - string for single model, list for fallbacks
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate
@@ -79,7 +79,9 @@ class Submind:
             Exception: If response generation fails
         """
         # Build messages for API call
-        messages = [{"role": "system", "content": self.system_prompt}]
+        # Note: LM Studio doesn't support "system" role, so we prepend it as a user message
+        messages = []
+        system_message_added = False
 
         # Add conversation history
         for msg in conversation_history:
@@ -91,12 +93,24 @@ class Submind:
                 # This submind's previous messages
                 messages.append({"role": "assistant", "content": content})
             elif speaker == "User":
-                # Actual user messages - no prefix needed (role: "user" already indicates this)
+                # Actual user messages
+                # Prepend system prompt to the first user message (LM Studio compatibility)
+                if not system_message_added:
+                    content = f"{self.system_prompt}\n\n{content}"
+                    system_message_added = True
                 messages.append({"role": "user", "content": content})
             else:
                 # Other subminds' messages - add speaker prefix for clarity
                 formatted_content = f"[{speaker}]: {content}"
+                # Prepend system prompt to first message if not added yet
+                if not system_message_added:
+                    formatted_content = f"{self.system_prompt}\n\n{formatted_content}"
+                    system_message_added = True
                 messages.append({"role": "user", "content": formatted_content})
+
+        # If we didn't add the system prompt yet (empty history), add it now as first message
+        if not system_message_added:
+            messages.insert(0, {"role": "user", "content": self.system_prompt})
 
         # Try each model in order until one succeeds
         last_error = None

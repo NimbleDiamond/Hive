@@ -163,3 +163,37 @@ body {
     margin-left: -0.5rem;
     transition: all 0.15s ease;
 }
+
+/* Submind chip toggle styles */
+.submind-chip {
+    cursor: pointer;
+    user-select: none;
+}
+
+.submind-chip:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+.submind-chip[data-enabled="false"] {
+    opacity: 0.4;
+    background-color: transparent !important;
+}
+
+.submind-chip[data-enabled="false"]:hover {
+    opacity: 0.6;
+}
+
+/* Preset selector styling */
+#presetSelect {
+    cursor: pointer;
+}
+
+#presetSelect:hover {
+    background-color: #40444b;
+}
+
+/* Active counter badge */
+#activeCounter {
+    font-variant-numeric: tabular-nums;
+}

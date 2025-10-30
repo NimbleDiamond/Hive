@@ -27,18 +27,25 @@ Submind simulates a group chat environment where specialized LLM instances discu
 ### Prerequisites
 
 - Python 3.8 or higher
-- OpenRouter API key ([get one here](https://openrouter.ai/keys))
+- [LM Studio](https://lmstudio.ai/) installed and running
+- A model loaded in LM Studio (e.g., mistralai/mistral-7b-instruct-v0.3)
 
 ### Setup
 
 1. **Clone or download this repository**
 
-2. **Create a virtual environment** (recommended)
+2. **Start LM Studio**
+   - Open LM Studio
+   - Load a model (e.g., Mistral 7B Instruct)
+   - Start the local server (default: port 1234)
+   - Ensure the server is accessible at `http://192.168.4.30:1234`
+
+3. **Create a virtual environment** (recommended)
    ```bash
    python3 -m venv venv
    ```
 
-3. **Activate the virtual environment**
+4. **Activate the virtual environment**
 
    On Linux/Mac:
    ```bash
@@ -50,24 +57,24 @@ Submind simulates a group chat environment where specialized LLM instances discu
    venv\Scripts\activate
    ```
 
-4. **Install dependencies**
+5. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-5. **Configure environment variables**
+6. **Configure environment variables (optional)**
    ```bash
    cp .env.example .env
    ```
 
-   Edit `.env` and add your OpenRouter API key:
+   If your LM Studio server is on a different URL, edit `.env`:
    ```
-   OPENROUTER_API_KEY=your_key_here
+   LMSTUDIO_BASE_URL=http://your-server-ip:port/v1
    ```
 
-6. **Configure models (optional)**
+7. **Configure models (optional)**
 
-   Edit `config.yaml` to choose which models to use. See "Finding Free Models" section below.
+   Edit `config.yaml` to update the model identifier to match what you have loaded in LM Studio.
 
 ## Usage
 
@@ -135,38 +142,27 @@ Conversations are automatically exported to the `exports/` directory in two form
 
 ### Model Configuration
 
-The `config.yaml` file controls all system behavior. To change models:
+The `config.yaml` file controls all system behavior. Since LM Studio typically runs one model at a time, all subminds use the same model with different temperatures for varied perspectives.
 
-1. **Change the default model for all subminds:**
+1. **Change the model identifier:**
    ```yaml
-   default_model: "meta-llama/llama-3.2-3b-instruct:free"
+   default_model: "mistralai/mistral-7b-instruct-v0.3"
    ```
 
-2. **Use different models for specific subminds:**
-   ```yaml
-   subminds:
-     - name: "Doctrinal"
-       role: "traditional"
-       model: "openai/gpt-4-turbo"  # Override default
-   ```
-
-3. **Use the default model for a submind:**
+2. **Update specific submind settings:**
    ```yaml
    subminds:
      - name: "Doctrinal"
        role: "traditional"
-       model: null  # Uses default_model
+       model: "mistralai/mistral-7b-instruct-v0.3"
+       temperature: 0.7  # Different temperatures create varied responses
    ```
 
-### Finding Free Models
+### Model Identifier
 
-OpenRouter offers several free models. Visit [OpenRouter Models](https://openrouter.ai/models) and filter by "Free".
-
-Popular free models (as of 2024):
-- `meta-llama/llama-3.2-3b-instruct:free`
-- `google/gemini-flash-1.5`
-- `nousresearch/hermes-3-llama-3.1-405b:free`
-- `mistralai/mistral-7b-instruct:free`
+The model identifier in your config should match the model loaded in LM Studio. You can find this in:
+- LM Studio → My Models → Model name
+- Or check the LM Studio server endpoint: `http://192.168.4.30:1234/v1/models`
 
 ### Other Configuration Options
 
@@ -199,7 +195,7 @@ submind/
 │   ├── app.js              # Frontend JavaScript (SSE handling)
 │   └── style.css           # Custom CSS styling
 ├── src/
-│   ├── api_client.py       # OpenRouter API wrapper
+│   ├── api_client.py       # LM Studio API client wrapper
 │   ├── submind.py          # Individual submind class
 │   ├── conversation.py     # CLI conversation orchestration
 │   ├── conversation_stream.py  # Web streaming conversation
@@ -252,33 +248,39 @@ Edit the system prompts in `subminds/prompts.py` to change how subminds behave.
 
 ## Troubleshooting
 
-### API Key Issues
+### LM Studio Connection Issues
 
 ```
-Error: OpenRouter API key not found
+Error: LM Studio API error / Connection test failed
 ```
-**Solution**: Make sure `.env` file exists with valid `OPENROUTER_API_KEY`
+**Solution**:
+- Make sure LM Studio is running
+- Check that the local server is started in LM Studio
+- Verify the server URL is correct (default: `http://192.168.4.30:1234`)
+- If using a different IP/port, update `LMSTUDIO_BASE_URL` in `.env`
 
 ### Model Not Found
 
 ```
 Error: Model not found
 ```
-**Solution**: Check model name at [OpenRouter Models](https://openrouter.ai/models). Model names must match exactly.
+**Solution**:
+- Make sure you have a model loaded in LM Studio
+- Check that the model identifier in `config.yaml` matches the model in LM Studio
+- You can verify the model name at `http://192.168.4.30:1234/v1/models`
 
-### Rate Limits
+### Slow Response Times
 
-Free models may have rate limits. If you hit limits:
-- Wait a few minutes between conversations
-- Switch to a different free model
-- Consider using a paid model for higher limits
+LM Studio runs locally, so response speed depends on your hardware:
+- **GPU**: Much faster inference
+- **CPU only**: Slower, especially for larger models
+- Consider using a smaller/quantized model if responses are too slow
 
 ## Cost Considerations
 
-- **Free models**: No cost, but may have rate limits
-- **Paid models**: Each submind makes 1 API call per round
-  - 5 subminds × 3 rounds = 15 API calls per conversation
-  - Check [OpenRouter pricing](https://openrouter.ai/models) for specific model costs
+- **Completely free!** LM Studio runs entirely on your local machine
+- No API costs or rate limits
+- Only consideration is hardware performance and electricity
 
 ## Contributing
 
@@ -290,15 +292,17 @@ MIT License - feel free to use and modify as you wish.
 
 ## Acknowledgments
 
-- Built with [OpenRouter](https://openrouter.ai/) for flexible model access
+- Built with [LM Studio](https://lmstudio.ai/) for local LLM inference
 - Uses [Rich](https://github.com/Textualize/rich) for beautiful terminal output
+- Uses OpenAI-compatible API interface
 
 ## Support
 
 For issues or questions:
 1. Check the troubleshooting section above
-2. Review [OpenRouter documentation](https://openrouter.ai/docs)
+2. Review [LM Studio documentation](https://lmstudio.ai/docs)
 3. Check your `config.yaml` settings
+4. Verify LM Studio server is running and accessible
 
 ---
 

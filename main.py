@@ -15,7 +15,7 @@ from rich.markdown import Markdown
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from src import (
-    OpenRouterClient,
+    LMStudioClient,
     Submind,
     Conversation,
     TerminationDetector,
@@ -54,18 +54,18 @@ class SubmindCLI:
 
     def initialize_api_client(self) -> bool:
         """
-        Initialize OpenRouter API client.
+        Initialize LM Studio API client.
 
         Returns:
             True if successful
         """
         try:
-            self.api_client = OpenRouterClient()
-            self.console.print("[green]✓[/green] API client initialized")
+            self.api_client = LMStudioClient()
+            self.console.print("[green]✓[/green] LM Studio client initialized")
             return True
         except Exception as e:
-            self.console.print(f"[red]✗ Error initializing API client: {e}[/red]")
-            self.console.print("\n[yellow]Make sure you have set OPENROUTER_API_KEY in your .env file[/yellow]")
+            self.console.print(f"[red]✗ Error initializing LM Studio client: {e}[/red]")
+            self.console.print("\n[yellow]Make sure LM Studio is running at http://192.168.4.30:1234[/yellow]")
             return False
 
     def initialize_subminds(self) -> bool:

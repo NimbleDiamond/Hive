@@ -6,6 +6,12 @@ let currentHistory = [];
 let currentSummary = null;
 let abortController = null;
 
+// Submind toggle state
+let enabledSubminds = new Set();
+let allSubminds = [];
+let presets = {};
+let autoTerminate = true; // Auto-end conversation detection
+
 // DOM Elements
 const chatForm = document.getElementById('chatForm');
 const promptInput = document.getElementById('promptInput');
@@ -16,6 +22,10 @@ const statusBar = document.getElementById('statusBar');
 const statusText = document.getElementById('statusText');
 const exportBtn = document.getElementById('exportBtn');
 const newChatBtn = document.getElementById('newChatBtn');
+const presetSelect = document.getElementById('presetSelect');
+const activeCount = document.getElementById('activeCount');
+const totalCount = document.getElementById('totalCount');
+const autoTerminateToggle = document.getElementById('autoTerminateToggle');
 
 // Color mapping for subminds
 const colorMap = {
@@ -45,13 +55,25 @@ let submindInfo = {};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Load submind info
+    // Load submind info and presets
     fetch('/config')
         .then(res => res.json())
         .then(data => {
             data.subminds.forEach(s => {
                 submindInfo[s.name] = s;
+                allSubminds.push(s.name);
+                enabledSubminds.add(s.name); // Start with all enabled
             });
+
+            // Load presets
+            presets = data.presets || {};
+            loadPresets();
+
+            // Update counter
+            updateActiveCounter();
+
+            // Initialize chip states
+            updateChipStates();
         });
 
     // Form submission
@@ -67,7 +89,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Stop button
     stopBtn.addEventListener('click', handleStop);
+
+    // Preset selector
+    presetSelect.addEventListener('change', handlePresetChange);
+
+    // Submind chip toggles
+    document.querySelectorAll('.submind-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const submindName = chip.dataset.submind;
+            toggleSubmind(submindName);
+        });
+    });
+
+    // Auto-terminate toggle
+    autoTerminateToggle.addEventListener('change', () => {
+        autoTerminate = autoTerminateToggle.checked;
+        console.log('Auto-terminate:', autoTerminate ? 'ON' : 'OFF');
+    });
 });
+
+// Preset and toggle functions
+function loadPresets() {
+    // Populate preset selector
+    presetSelect.innerHTML = '';
+    Object.keys(presets).forEach(presetKey => {
+        const preset = presets[presetKey];
+        const option = document.createElement('option');
+        option.value = presetKey;
+        option.textContent = preset.name;
+        presetSelect.appendChild(option);
+    });
+}
+
+function handlePresetChange() {
+    const presetKey = presetSelect.value;
+    if (!presets[presetKey]) return;
+
+    const preset = presets[presetKey];
+
+    // Clear and set enabled subminds based on preset
+    enabledSubminds.clear();
+    preset.subminds.forEach(name => enabledSubminds.add(name));
+
+    // Update UI
+    updateChipStates();
+    updateActiveCounter();
+}
+
+function toggleSubmind(submindName) {
+    // Check if we can toggle (minimum 2 required)
+    if (enabledSubminds.has(submindName) && enabledSubminds.size <= 2) {
+        showStatus('Minimum 2 subminds required', true);
+        setTimeout(hideStatus, 2000);
+        return;
+    }
+
+    // Toggle the submind
+    if (enabledSubminds.has(submindName)) {
+        enabledSubminds.delete(submindName);
+    } else {
+        enabledSubminds.add(submindName);
+    }
+
+    // Update UI
+    updateChipStates();
+    updateActiveCounter();
+
+    // Reset preset selector to "custom" if it exists, otherwise keep current
+    // (since manual toggle means not using preset anymore)
+}
+
+function updateChipStates() {
+    document.querySelectorAll('.submind-chip').forEach(chip => {
+        const submindName = chip.dataset.submind;
+        const isEnabled = enabledSubminds.has(submindName);
+
+        chip.dataset.enabled = isEnabled;
+
+        if (isEnabled) {
+            // Active state
+            chip.classList.remove('opacity-40', 'border', 'border-gray-600');
+            chip.classList.add('bg-discord-darker');
+        } else {
+            // Disabled state
+            chip.classList.add('opacity-40', 'border', 'border-gray-600');
+            chip.classList.remove('bg-discord-darker');
+        }
+    });
+}
+
+function updateActiveCounter() {
+    activeCount.textContent = enabledSubminds.size;
+    totalCount.textContent = allSubminds.length;
+}
 
 function handleSubmit(e) {
     e.preventDefault();
@@ -121,7 +235,11 @@ function startConversation(prompt) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: prompt }),
+        body: JSON.stringify({
+            prompt: prompt,
+            enabled_subminds: Array.from(enabledSubminds),
+            auto_terminate: autoTerminate
+        }),
         signal: abortController.signal,
     })
     .then(response => {
